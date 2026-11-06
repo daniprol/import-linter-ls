@@ -1,0 +1,21 @@
+# A tiny app used to try the language server. Its architecture is checked by import-linter:
+# `low` must not import from `high`, and the app breaks that rule on purpose (see src/layered_app/low/storage.py).
+[project]
+name = "layered-app"
+version = "0.0.0"
+description = "Example app with an import-linter contract that is broken on purpose"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["uv_build>=0.9,<0.12"]
+build-backend = "uv_build"
+
+[tool.importlinter]
+root_package = "layered_app"
+
+[[tool.importlinter.contracts]]
+id = "layers"
+name = "High level code may use low level code, never the other way round"
+type = "layers"
+layers = ["layered_app.high", "layered_app.low"]
