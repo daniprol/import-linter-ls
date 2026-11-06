@@ -8,6 +8,11 @@
 
 The extension starts when the workspace has a `.importlinter`, `setup.cfg` or `pyproject.toml`.
 
+## What it does
+
+When you open or save a file, the extension runs import-linter on the project and underlines every import that
+breaks a contract. The project is the nearest folder above the file with an import-linter config.
+
 ## Settings
 
 | Setting | Purpose |
