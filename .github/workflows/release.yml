@@ -1,0 +1,114 @@
+name: Release
+
+# Push a tag like `v0.1.0` to publish that version:
+#   - the Python package to PyPI (after you approve the `pypi` environment),
+#   - the VS Code extension (.vsix) to the GitHub release.
+# Run it by hand (Actions > Release > Run workflow) to publish the Python package to TestPyPI instead.
+# The tag, pyproject.toml and vscode-extension/package.json must all have the same version.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    name: Build the Python package and the extension
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # to check that the tag is on main
+      - name: Check the tag matches both versions and is on main
+        if: github.ref_type == 'tag'
+        run: |
+          python_version=$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
+          extension_version=$(python3 -c 'import json; print(json.load(open("vscode-extension/package.json"))["version"])')
+          [ "$GITHUB_REF_NAME" = "v$python_version" ] || { echo "::error::Tag $GITHUB_REF_NAME but pyproject.toml says $python_version"; exit 1; }
+          [ "$GITHUB_REF_NAME" = "v$extension_version" ] || { echo "::error::Tag $GITHUB_REF_NAME but package.json says $extension_version"; exit 1; }
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || { echo "::error::$GITHUB_REF_NAME is not on main"; exit 1; }
+      - uses: astral-sh/setup-uv@v7
+      - name: Build the wheel and the source distribution
+        run: uv build --out-dir dist
+      # Install the wheel in a clean environment on the oldest supported Python and import it.
+      - name: Smoke test
+        run: uv run --isolated --no-project --python 3.11 --with dist/*.whl python -c "import import_linter_ls; print(import_linter_ls.__version__)"
+      - uses: actions/upload-artifact@v6
+        with:
+          name: dist
+          path: dist
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --dir vscode-extension build
+      - run: pnpm --dir vscode-extension package
+      - uses: actions/upload-artifact@v6
+        with:
+          name: vscode-extension
+          path: vscode-extension/*.vsix
+
+  pypi:
+    name: Publish to PyPI
+    if: github.ref_type == 'tag'
+    needs: [ci, build]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/import-linter-ls
+    permissions:
+      id-token: write  # trusted publishing: no API token anywhere
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: dist
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  testpypi:
+    name: Publish to TestPyPI
+    if: github.event_name == 'workflow_dispatch'
+    needs: [ci, build]
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/import-linter-ls
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: dist
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true  # a second dry run of the same version is not an error
+
+  github-release:
+    name: GitHub release
+    needs: pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: vscode-extension
+          path: vsix
+      - name: Create the release with generated notes and the extension attached
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          flags="--generate-notes --verify-tag"
+          if [[ "$GITHUB_REF_NAME" =~ (a|b|rc)[0-9]+$ ]]; then flags+=" --prerelease"; fi
+          gh release create "$GITHUB_REF_NAME" $flags vsix/*.vsix

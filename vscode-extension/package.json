@@ -1,0 +1,85 @@
+{
+  "name": "import-linter-ls",
+  "displayName": "Import Linter",
+  "version": "0.1.0",
+  "private": true,
+  "description": "See import-linter contract errors and import violations in VS Code.",
+  "categories": [
+    "Linters"
+  ],
+  "keywords": [
+    "architecture",
+    "import-linter",
+    "linter",
+    "python"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daniprol/import-linter-ls.git",
+    "directory": "vscode-extension"
+  },
+  "publisher": "daniprol",
+  "main": "./dist/extension.js",
+  "scripts": {
+    "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --sourcemap --outfile=dist/extension.js",
+    "watch": "pnpm build --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint src",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "package": "vsce package --no-dependencies"
+  },
+  "dependencies": {
+    "@vscode/python-extension": "^1.0.6",
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/vscode": "~1.90.0",
+    "@vscode/vsce": "^3.0.0",
+    "esbuild": "^0.25.0",
+    "oxfmt": "^0.77.0",
+    "oxlint": "^1.0.0",
+    "typescript": "^5.9.0"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "importLinterLs.restart",
+        "title": "Import Linter: Restart Language Server"
+      }
+    ],
+    "configuration": {
+      "title": "Import Linter",
+      "properties": {
+        "importLinterLs.interpreter": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Path to the Python interpreter that has `import-linter-ls` installed. Leave empty to use the interpreter selected in the Python extension."
+        },
+        "importLinterLs.trace.server": {
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Log the messages between VS Code and the language server (for debugging)."
+        }
+      }
+    }
+  },
+  "activationEvents": [
+    "workspaceContains:**/.importlinter",
+    "workspaceContains:**/pyproject.toml",
+    "workspaceContains:**/setup.cfg"
+  ],
+  "extensionDependencies": [
+    "ms-python.python"
+  ],
+  "engines": {
+    "vscode": "^1.90.0"
+  }
+}

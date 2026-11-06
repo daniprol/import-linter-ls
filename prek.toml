@@ -1,0 +1,38 @@
+# Git hooks, run by prek (https://prek.j178.dev). Install once with:
+#     uv run prek install
+#
+# - On every commit: fast checks and auto-fixes on the staged files.
+# - On every push:   slower checks on the whole project (types, tests).
+# CI runs the same hooks.
+#:schema https://www.schemastore.org/prek.json
+
+default_install_hook_types = ["pre-commit", "pre-push"]
+default_stages = ["pre-commit"]
+
+[[repos]]
+repo = "builtin"
+hooks = [
+    { id = "trailing-whitespace" },
+    { id = "end-of-file-fixer" },
+    { id = "check-yaml" },
+    { id = "check-toml" },
+    { id = "check-merge-conflict" },
+    { id = "check-added-large-files" },
+]
+
+# Local hooks use the tool versions pinned in uv.lock and pnpm-lock.yaml, so hooks, CI and your
+# editor always agree.
+[[repos]]
+repo = "local"
+hooks = [
+    # On commit
+    { id = "ruff-check", name = "ruff check", entry = "uv run --frozen ruff check --fix", language = "system", types = ["python"] },
+    { id = "ruff-format", name = "ruff format", entry = "uv run --frozen ruff format", language = "system", types = ["python"] },
+    { id = "oxfmt", name = "oxfmt", entry = "pnpm --dir vscode-extension exec oxfmt", language = "system", files = "^vscode-extension/src/", types = ["ts"], pass_filenames = false },
+    { id = "oxlint", name = "oxlint", entry = "pnpm --dir vscode-extension exec oxlint src", language = "system", files = "^vscode-extension/src/", types = ["ts"], pass_filenames = false },
+
+    # On push
+    { id = "ty", name = "ty check", entry = "uv run --frozen ty check", language = "system", types_or = ["python", "pyi"], pass_filenames = false, stages = ["pre-push"] },
+    { id = "tsc", name = "tsc (extension types)", entry = "pnpm --dir vscode-extension typecheck", language = "system", files = "^vscode-extension/src/", types = ["ts"], pass_filenames = false, stages = ["pre-push"] },
+    { id = "pytest", name = "pytest", entry = "uv run --frozen pytest", language = "system", types = ["python"], pass_filenames = false, stages = ["pre-push"] },
+]

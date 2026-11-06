@@ -1,0 +1,11 @@
+# The same contract as in ../pyproject.toml, in INI format, to try both config formats.
+# Run it with: lint-imports --config ini/.importlinter
+[importlinter]
+root_package = layered_app
+
+[importlinter:contract:layers]
+name = High level code may use low level code, never the other way round
+type = layers
+layers =
+    layered_app.high
+    layered_app.low

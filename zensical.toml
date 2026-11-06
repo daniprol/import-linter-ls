@@ -1,0 +1,18 @@
+# Documentation site, built with Zensical (https://zensical.org).
+#     uv run --only-group docs zensical serve   # preview on http://localhost:8000
+# Published to GitHub Pages by .github/workflows/docs.yml on every push to main.
+
+[project]
+site_name = "import-linter-ls"
+site_description = "A language server and VS Code extension for import-linter"
+site_url = "https://daniprol.github.io/import-linter-ls/"
+repo_url = "https://github.com/daniprol/import-linter-ls"
+repo_name = "daniprol/import-linter-ls"
+edit_uri = "edit/main/docs/"
+nav = [
+  { "Get started" = "index.md" },
+  { "VS Code" = "vscode.md" },
+  { "Other editors" = "other-editors.md" },
+  { "Roadmap" = "roadmap.md" },
+  { "Architecture" = "architecture.md" },
+]

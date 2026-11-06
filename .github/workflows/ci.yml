@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:  # release.yml reruns these checks on the tagged commit
+
+jobs:
+  python:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.14"]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: uv sync --frozen
+      - run: pnpm install --frozen-lockfile
+      # The same hooks developers run on commit and on push (see prek.toml).
+      - name: Commit hooks (ruff, oxfmt, oxlint, file checks)
+        run: uv run --frozen prek run --all-files --show-diff-on-failure
+      - name: Push hooks (ty, tsc, pytest)
+        run: uv run --frozen prek run --all-files --stage pre-push
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run --frozen pytest --cov --cov-report=term-missing
+
+  extension:
+    name: VS Code extension builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --dir vscode-extension build
+      - run: pnpm --dir vscode-extension package
+      - uses: actions/upload-artifact@v6
+        with:
+          name: vscode-extension
+          path: vscode-extension/*.vsix

@@ -1,0 +1,94 @@
+[project]
+name = "import-linter-ls"
+version = "0.1.0"
+description = "A language server for import-linter: see contract errors and import violations in your editor"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "daniprol" }]
+keywords = ["import-linter", "language-server", "lsp", "architecture"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Quality Assurance",
+    "Typing :: Typed",
+]
+# Same minimum as import-linter itself.
+requires-python = ">=3.11"
+dependencies = ["pygls>=2.0,<3"]
+
+[project.scripts]
+import-linter-ls = "import_linter_ls.__main__:main"
+
+[project.urls]
+Documentation = "https://daniprol.github.io/import-linter-ls/"
+Repository = "https://github.com/daniprol/import-linter-ls"
+Issues = "https://github.com/daniprol/import-linter-ls/issues"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.12"]
+build-backend = "uv_build"
+
+# The example app is a workspace member so `uv sync` installs it too.
+[tool.uv.workspace]
+members = ["examples/layered_app"]
+
+[dependency-groups]
+dev = [
+    "layered-app",
+    "prek>=0.2",
+    "pytest>=8",
+    "pytest-cov>=6",
+    "pytest-lsp>=1.0",
+    "ruff>=0.14",
+    "ty>=0.0.1",
+]
+docs = ["zensical>=0.0.20"]  # uv run --only-group docs zensical serve
+
+[tool.uv.sources]
+layered-app = { workspace = true }
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",  # pycodestyle
+    "F",       # pyflakes
+    "I",       # import sorting
+    "N",       # naming
+    "UP",      # modern syntax for Python 3.11+
+    "B",       # likely bugs
+    "A",       # shadowing builtins
+    "C4",      # comprehensions
+    "SIM",     # simplifications
+    "RET",     # return statements
+    "PIE",     # misc. clean-ups
+    "PTH",     # pathlib over os.path
+    "PT",      # pytest style
+    "ASYNC",   # asyncio pitfalls
+    "RUF",     # ruff-specific
+]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ty.rules]
+missing-type-argument = "error"  # `list[str]`, not `list`: a bare generic hides mistakes
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+# `unit` tests are fast and need no server. `integration` tests start the real server and talk LSP to it.
+addopts = ["--strict-markers", "--strict-config"]
+markers = [
+    "unit: fast tests of one function, no server",
+    "integration: starts the real language server and talks LSP to it",
+]
+
+[tool.coverage.run]
+source = ["import_linter_ls"]
+branch = true
