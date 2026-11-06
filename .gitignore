@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+dist/
+coverage.xml
+.coverage
+
+# Docs
+site/
+
+# Node and the VS Code extension
+node_modules/
+vscode-extension/dist/
+*.vsix
