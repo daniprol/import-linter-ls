@@ -16,21 +16,19 @@ async def test_server_says_it_is_ready_after_the_handshake(client: LanguageClien
     assert any("is ready" in message.message for message in client.log_messages)
 
 
-async def test_opening_a_toml_config_file_is_logged(client: LanguageClient, example_app: Path) -> None:
-    config_file = example_app / "pyproject.toml"
+async def test_saving_a_file_shows_the_broken_import_as_a_diagnostic(client: LanguageClient, example_app: Path) -> None:
+    storage_file = example_app / "src" / "layered_app" / "low" / "storage.py"
 
-    client.text_document_did_open(
-        types.DidOpenTextDocumentParams(
-            text_document=types.TextDocumentItem(
-                uri=config_file.as_uri(),
-                language_id="toml",
-                version=1,
-                text=config_file.read_text(),
-            )
-        )
+    client.text_document_did_save(
+        types.DidSaveTextDocumentParams(text_document=types.TextDocumentIdentifier(uri=storage_file.as_uri()))
     )
-    # The server answers with a log message. Give it a moment to handle the notification.
-    await asyncio.sleep(0.5)
+    # import-linter takes a moment to run, so wait until the server publishes the diagnostics.
+    for _ in range(100):
+        diagnostics = client.diagnostics.get(storage_file.as_uri(), [])
+        if diagnostics:
+            break
+        await asyncio.sleep(0.1)
 
-    messages = [message.message for message in client.log_messages]
-    assert any("Opened toml config file" in message for message in messages)
+    assert len(diagnostics) == 1
+    assert diagnostics[0].range.start.line == 3  # "l.4" in import-linter's report, counted from 1
+    assert "layered_app.high.report" in diagnostics[0].message
