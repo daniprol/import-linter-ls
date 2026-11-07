@@ -25,7 +25,7 @@ export async function startServer(outputChannel: vscode.LogOutputChannel): Promi
   const clientOptions: LanguageClientOptions = {
     // Files the server wants to hear about. The server decides which of them hold import-linter config.
     documentSelector: [
-      ...CONFIG_FILE_PATTERNS.map(pattern => ({ scheme: "file", pattern })),
+      ...CONFIG_FILE_PATTERNS.map((pattern) => ({ scheme: "file", pattern })),
       { scheme: "file", language: "python" },
     ],
     outputChannel,
