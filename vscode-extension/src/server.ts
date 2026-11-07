@@ -36,6 +36,10 @@ export async function startServer(outputChannel: vscode.LogOutputChannel): Promi
 }
 
 export async function stopServer(): Promise<void> {
-  await client?.stop();
+  // `stop()` throws if the server never started (for example, the interpreter was not found),
+  // and that would also break the "Restart" command. `needsStop()` says whether there is anything to stop.
+  if (client?.needsStop()) {
+    await client.stop();
+  }
   client = undefined;
 }

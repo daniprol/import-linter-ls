@@ -1,3 +1,4 @@
+import { PythonExtension } from "@vscode/python-extension";
 import * as vscode from "vscode";
 
 import { startServer, stopServer } from "./server";
@@ -19,6 +20,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         await stopServer();
         await startServer(outputChannel);
       }
+    }),
+  );
+
+  // Restart when the user picks another interpreter with "Python: Select Interpreter".
+  const pythonExtension = await PythonExtension.api();
+  context.subscriptions.push(
+    pythonExtension.environments.onDidChangeActiveEnvironmentPath(async () => {
+      await stopServer();
+      await startServer(outputChannel);
     }),
   );
 
