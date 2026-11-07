@@ -14,4 +14,4 @@ Then install the [VS Code extension](vscode.md), or [connect another editor](oth
 It reads the same config files as import-linter: `.importlinter`, `setup.cfg` and `pyproject.toml`.
 
 !!! note "Early stage"
-    Today the server starts and recognises config files. See the [roadmap](roadmap.md) for what comes next.
+    Today the server shows config mistakes and broken imports when you open or save a file. See the [roadmap](roadmap.md) for what comes next.

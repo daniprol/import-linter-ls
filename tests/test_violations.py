@@ -4,15 +4,11 @@ from pathlib import Path
 
 import pytest
 
-from import_linter_ls.violations import Violation, find_project_dir, parse_report, run_import_linter
+from import_linter_ls.violations import Violation, parse_report, run_import_linter
 
 pytestmark = pytest.mark.unit
 
 STORAGE_FILE_PARTS = ("src", "layered_app", "low", "storage.py")
-
-
-def test_find_project_dir_walks_up_to_the_config_file(example_app: Path) -> None:
-    assert find_project_dir(example_app.joinpath(*STORAGE_FILE_PARTS)) == example_app
 
 
 def test_the_report_of_the_example_app_has_one_violation(example_app: Path) -> None:

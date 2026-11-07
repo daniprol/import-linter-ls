@@ -32,3 +32,22 @@ async def test_saving_a_file_shows_the_broken_import_as_a_diagnostic(client: Lan
     assert len(diagnostics) == 1
     assert diagnostics[0].range.start.line == 3  # "l.4" in import-linter's report, counted from 1
     assert "layered_app.high.report" in diagnostics[0].message
+
+
+async def test_saving_a_broken_config_file_shows_where_it_is_broken(client: LanguageClient, tmp_path: Path) -> None:
+    config_file = tmp_path / ".importlinter"
+    config_file.write_text(
+        "[importlinter]\nroot_package = my_app\n\n[importlinter:contract:one]\nname = One\ntype = layer\n"
+    )
+
+    client.text_document_did_save(
+        types.DidSaveTextDocumentParams(text_document=types.TextDocumentIdentifier(uri=config_file.as_uri()))
+    )
+    for _ in range(100):
+        diagnostics = client.diagnostics.get(config_file.as_uri(), [])
+        if diagnostics:
+            break
+        await asyncio.sleep(0.1)
+
+    assert [diagnostic.range.start.line for diagnostic in diagnostics] == [5]  # the `type = layer` line
+    assert "Did you mean 'layers'?" in diagnostics[0].message

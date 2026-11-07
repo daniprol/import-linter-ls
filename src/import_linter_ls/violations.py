@@ -10,8 +10,6 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from import_linter_ls.config_files import config_format
-
 
 @dataclass(frozen=True)
 class Violation:
@@ -21,15 +19,6 @@ class Violation:
     line: int
     importer: str
     imported: str
-
-
-def find_project_dir(file: Path) -> Path | None:
-    """Walk up from `file` to the first folder with an import-linter config file."""
-    for folder in file.parents:
-        for candidate in folder.iterdir():
-            if config_format(candidate) and "importlinter" in candidate.read_text(errors="replace"):
-                return folder
-    return None
 
 
 def run_import_linter(project_dir: Path) -> str:
