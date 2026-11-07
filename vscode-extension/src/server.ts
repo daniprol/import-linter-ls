@@ -11,6 +11,8 @@ import { findInterpreter } from "./python";
 // VS Code starts it as a child process and talks to it over stdin/stdout.
 let client: LanguageClient | undefined;
 
+const CONFIG_FILE_PATTERNS = ["**/.importlinter", "**/setup.cfg", "**/pyproject.toml"];
+
 export async function startServer(outputChannel: vscode.LogOutputChannel): Promise<void> {
   const interpreter = await findInterpreter();
   outputChannel.info(`Starting import-linter-ls with ${interpreter}`);
@@ -23,9 +25,7 @@ export async function startServer(outputChannel: vscode.LogOutputChannel): Promi
   const clientOptions: LanguageClientOptions = {
     // Files the server wants to hear about. The server decides which of them hold import-linter config.
     documentSelector: [
-      { scheme: "file", pattern: "**/.importlinter" },
-      { scheme: "file", pattern: "**/setup.cfg" },
-      { scheme: "file", pattern: "**/pyproject.toml" },
+      ...CONFIG_FILE_PATTERNS.map(pattern => ({ scheme: "file", pattern })),
       { scheme: "file", language: "python" },
     ],
     outputChannel,
