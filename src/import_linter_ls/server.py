@@ -11,7 +11,9 @@ from pygls.lsp.server import LanguageServer
 from pygls.uris import to_fs_path
 
 from import_linter_ls import __version__
-from import_linter_ls.violations import Violation, find_project_dir, parse_report, run_import_linter
+from import_linter_ls.config_diagnostics import config_diagnostics
+from import_linter_ls.config_files import config_format, find_config_file
+from import_linter_ls.violations import Violation, parse_report, run_import_linter
 
 # A language server is a program that an editor starts and talks to with JSON messages (the Language
 # Server Protocol, LSP). The editor sends events ("the user opened this file") and we answer or
@@ -47,26 +49,37 @@ async def on_document_saved(params: types.DidSaveTextDocumentParams) -> None:
 
 
 async def check_project(document_uri: str) -> None:
-    """Run import-linter for the project that owns the document and publish what it finds."""
+    """Check the config of the project that owns the document, then run import-linter and publish what it finds."""
     file_path = to_fs_path(document_uri)
     if file_path is None:  # not a file on disk, for example an unsaved "untitled:" document
         return
-    project_dir = find_project_dir(Path(file_path))
-    if project_dir is None:  # no import-linter config nearby, nothing to check
+    config_file = find_config_file(Path(file_path))
+    if config_file is None:  # no import-linter config nearby, nothing to check
         return
 
-    log(f"Running import-linter in {project_dir}")
-    # import-linter takes a few seconds on big projects. Run it in a thread so the server can keep answering.
-    report = await asyncio.to_thread(run_import_linter, project_dir)
-    publish_diagnostics(parse_report(report, project_dir))
+    # A diagnostic is a problem on a range of a file (a squiggly line). We collect them per file, by URI.
+    # The config file always gets an entry, even an empty one, so that fixed mistakes disappear.
+    config_problems = config_diagnostics(config_file, config_format(config_file) or "ini")
+    diagnostics_by_uri = {config_file.as_uri(): config_problems}
+
+    if config_problems:
+        # import-linter cannot check contracts that are not configured correctly, so we stop here.
+        log(f"{config_file} has {len(config_problems)} problem(s); fix them to check the imports")
+    else:
+        project_dir = config_file.parent
+        log(f"Running import-linter in {project_dir}")
+        # import-linter takes a few seconds on big projects. Run it in a thread so the server can keep answering.
+        report = await asyncio.to_thread(run_import_linter, project_dir)
+        for violation in parse_report(report, project_dir):
+            diagnostics_by_uri.setdefault(violation.file.as_uri(), []).append(to_diagnostic(violation))
+
+    publish_diagnostics(diagnostics_by_uri)
 
 
-def publish_diagnostics(violations: list[Violation]) -> None:
-    """Send the violations to the editor. A "diagnostic" is a problem on a range of a file (a squiggly line)."""
-    diagnostics_by_uri: dict[str, list[types.Diagnostic]] = {uri: [] for uri in files_with_diagnostics}
-    for violation in violations:
-        uri = violation.file.as_uri()
-        diagnostics_by_uri.setdefault(uri, []).append(to_diagnostic(violation))
+def publish_diagnostics(diagnostics_by_uri: dict[str, list[types.Diagnostic]]) -> None:
+    """Send the diagnostics to the editor, and clear them in files that had some last time but have none now."""
+    for uri in files_with_diagnostics:
+        diagnostics_by_uri.setdefault(uri, [])
 
     for uri, diagnostics in diagnostics_by_uri.items():
         server.text_document_publish_diagnostics(types.PublishDiagnosticsParams(uri=uri, diagnostics=diagnostics))

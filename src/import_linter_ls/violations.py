@@ -4,13 +4,12 @@ This is a throwaway first version: it runs `lint-imports` and reads its text out
 replaced by a module that talks to import-linter directly (see docs/roadmap.md).
 """
 
+import os
 import re
 import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-
-from import_linter_ls.config_files import config_format
 
 
 @dataclass(frozen=True)
@@ -23,15 +22,6 @@ class Violation:
     imported: str
 
 
-def find_project_dir(file: Path) -> Path | None:
-    """Walk up from `file` to the first folder with an import-linter config file."""
-    for folder in file.parents:
-        for candidate in folder.iterdir():
-            if config_format(candidate) and "importlinter" in candidate.read_text(errors="replace"):
-                return folder
-    return None
-
-
 def run_import_linter(project_dir: Path) -> str:
     """Run `lint-imports` in `project_dir` and return its report (the output is the same for pass and fail)."""
     # Start the `lint-imports` command through Python so that it uses the same environment as the
@@ -40,11 +30,26 @@ def run_import_linter(project_dir: Path) -> str:
     result = subprocess.run(
         [sys.executable, "-c", code, "--no-cache"],
         cwd=project_dir,
+        env=environment_that_finds_the_project(project_dir),
         capture_output=True,
         text=True,
         check=False,  # exit code 1 only means "there are broken contracts"
     )
     return result.stdout
+
+
+def environment_that_finds_the_project(project_dir: Path) -> dict[str, str]:
+    """Environment variables that let import-linter find the project's root package.
+
+    import-linter does not import the project, but it must find the package's folder. It looks in the current
+    folder, which is enough for a flat layout. In a `src/` layout the package is only found when it is installed
+    in the same environment, which is not the case when the server is installed apart from the project (for
+    example with `uv tool install import-linter-ls`). Adding both folders to PYTHONPATH covers both layouts.
+    """
+    python_path = [str(project_dir), str(project_dir / "src")]
+    if os.environ.get("PYTHONPATH"):
+        python_path.append(os.environ["PYTHONPATH"])
+    return {**os.environ, "PYTHONPATH": os.pathsep.join(python_path)}
 
 
 # A broken import is reported like this: `- layered_app.low.storage -> layered_app.high.report (l.4)`.

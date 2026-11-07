@@ -31,6 +31,7 @@
     "package": "vsce package --no-dependencies"
   },
   "dependencies": {
+    "@vscode/python-environments": "^1.4.0",
     "@vscode/python-extension": "^1.0.6",
     "vscode-languageclient": "^9.0.1"
   },
@@ -56,7 +57,7 @@
         "importLinterLs.interpreter": {
           "type": "string",
           "default": "",
-          "markdownDescription": "Path to the Python interpreter that has `import-linter-ls` installed. Leave empty to use the interpreter selected in the Python extension."
+          "markdownDescription": "Path to the Python interpreter that has `import-linter-ls` installed. Leave empty to use the project's environment (selected in the Python or Python Environments extension), or else the `import-linter-ls` command on the PATH."
         },
         "importLinterLs.trace.server": {
           "type": "string",
@@ -75,9 +76,6 @@
     "workspaceContains:**/.importlinter",
     "workspaceContains:**/pyproject.toml",
     "workspaceContains:**/setup.cfg"
-  ],
-  "extensionDependencies": [
-    "ms-python.python"
   ],
   "engines": {
     "vscode": "^1.90.0"

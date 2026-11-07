@@ -10,6 +10,9 @@ importers:
 
   vscode-extension:
     dependencies:
+      '@vscode/python-environments':
+        specifier: ^1.4.0
+        version: 1.4.0
       '@vscode/python-extension':
         specifier: ^1.0.6
         version: 1.0.6
@@ -499,6 +502,10 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@renovatebot/pep440@3.1.0':
+    resolution: {integrity: sha512-Tx/wEv92j3HmFwlqfNp8Pq/BMJPVk8c5so/Ae8eHccceBeeZx4QDuLf6RYfXJ6kvw8H05K1KPoZSsigLQA7Rqg==}
+    engines: {node: ^18.12.0 || ^20.0.0 || ^22.11.0, pnpm: ^8.6.11}
+
   '@secretlint/config-creator@10.2.2':
     resolution: {integrity: sha512-BynOBe7Hn3LJjb3CqCHZjeNB09s/vgf0baBaHVw67w7gHF0d25c3ZsZ5+vv8TgwSchRdUCRrbbcq5i2B1fJ2QQ==}
     engines: {node: '>=20.0.0'}
@@ -579,6 +586,10 @@ packages:
   '@typespec/ts-http-runtime@0.3.9':
     resolution: {integrity: sha512-edSdeAqkdxBVzA1yL1LrLCml1YjyCVvPMtMqJpbF+6K609tHe8V6sQUzFQSGcYNhcuhOceZtjvN32+mpIth30A==}
     engines: {node: '>=22.0.0'}
+
+  '@vscode/python-environments@1.4.0':
+    resolution: {integrity: sha512-eTnzwnUNZsM0fX6Vzjfi7+elC83H/uXM/qKa3+q0y7ZA5P2ym4siUpfCtUdcSaGsF3whkyJNLOb5WCushL0y3Q==}
+    engines: {node: '>=22.21.1', vscode: ^1.110.0}
 
   '@vscode/python-extension@1.0.6':
     resolution: {integrity: sha512-q7KYf+mymM67G0yS6xfhczFwu2teBi5oXHVdNgtCsYhErdSOkwMPtE291SqQahrjTcgKxn7O56i1qb1EQR6o4w==}
@@ -1881,6 +1892,8 @@ snapshots:
   '@oxlint/binding-win32-x64-msvc@1.92.0':
     optional: true
 
+  '@renovatebot/pep440@3.1.0': {}
+
   '@secretlint/config-creator@10.2.2':
     dependencies:
       '@secretlint/types': 10.2.2
@@ -2002,6 +2015,10 @@ snapshots:
       tslib: 2.9.1
     transitivePeerDependencies:
       - supports-color
+
+  '@vscode/python-environments@1.4.0':
+    dependencies:
+      '@renovatebot/pep440': 3.1.0
 
   '@vscode/python-extension@1.0.6': {}
 
