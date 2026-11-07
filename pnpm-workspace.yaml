@@ -2,3 +2,9 @@ packages:
   - vscode-extension
 onlyBuiltDependencies:
   - esbuild
+# pnpm 10 only runs install scripts of packages listed above. These two come with @vscode/vsce and stay off:
+# keytar saves a Marketplace token for `vsce login`, and vsce-sign fetches a signing binary. We only run
+# `vsce package`, and CI publishes with a token from the environment, so neither is needed.
+ignoredBuiltDependencies:
+  - "@vscode/vsce-sign"
+  - keytar
